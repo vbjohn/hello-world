@@ -7,3 +7,7 @@ Testing the git commits in the branch.
 
 -----------------------------
 committing changes using tortoise git.
+
+
+-----------------------------
+Committing in second branch
