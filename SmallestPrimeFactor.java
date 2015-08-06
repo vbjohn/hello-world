@@ -1,54 +1,88 @@
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map.Entry;
+import java.util.TreeMap;
+
 /**
  * @author vijendrab
  */
 public class SmallestPrimeFactor {
 
-	static boolean noprimes[] = new boolean[1000000];
-/*	Let smpf(n) be the smallest prime factor of n.
-	smpf(91)=7 because 91=7×13 and smpf(45)=3 because 45=3×3×5.
+	static boolean [] noprimes = new boolean[1000000];
+	static List<Integer> primeCollection= new ArrayList<Integer>();
+	static TreeMap<Integer, Integer> stats = new TreeMap<Integer, Integer>();
+/*	
+	Problem statement:
+	Let smpf(n) be the smallest prime factor of n.
+	smpf(91)=7 because 91=7Ã—13 and smpf(45)=3 because 45=3Ã—3Ã—5.
 	Let S(n) be the sum of smpf(i) for 2 <= i <= n.
 	E.g. S(100)=1257.
 	
 	Find S(1012) mod 109.
 */
 	public static void main(String[] args) {
-		//System.err.println(getSumOfSmallestPrimeFactors(1000000000000l)%1000000000l);
-		//getSumOfSmallestPrimeFactors(1000000000000l);
-		//getSmallestPrimeFactor(999999999997);
-		//System.err.println(getSmallestPrimeFactor(1000000000000l));
-		
 		buildPrimes(1000000);
-		System.err.println("Completed");
+		System.out.println(primeCollection.size());
+		System.out.println(getSumOfSmallestPrimeFactors(10000));
+		System.out.println("Completed execution");
+		
+		//Print all values stored in ConcurrentHashMap instance
+		for(Entry<Integer, Integer> e : stats.entrySet()) {
+		  System.out.println(e.getKey()+" = "+e.getValue());
+		}
 	}
-	
+
 	/**
-	 * @param i
+	 * smallest prime factor of a number is always <= the sqrt(num).
+	 * i.e all the numbers till 10^12 will have smallest prime factor below 10^6
+	 * 
+	 * @param input
 	 */
-	private static long getSumOfSmallestPrimeFactors(long input) {
+	private static long getSumOfSmallestPrimeFactors(int input) {
 		long sum=0;
-		for(long i = input; i>=2;i--){
-		//for(long i = 2; i<=input;i++){
+		for(int i = 2; i<=input;i++){
 			sum += getSmallestPrimeFactor(i);
-			System.err.println("Summation upto "+ i + " is + "+ sum);
+			System.out.println("Summation upto "+ i + " is + "+ sum);
 		}
 		return sum;
 	}
 
-	public static long getSmallestPrimeFactor(long number){
-		int divs = 2;
-		//if number is prime, smallest prime factor will be the number itself
-		if (isPrime(divs)){return divs;}
-		//if number is not a prime
-		//TODO We need to find only smallest prime factor
-		//instead of iterating natural numbers, iterate prime numbers
-		while (divs <= number) {
-			if ((number % divs) == 0 && isPrime(divs)) {
-				//System.err.println("Smallest prime factor of "+number + " is " +divs);
-				break;
-			}
-			divs++;
+
+//	/**
+//	 * @param number
+//	 */
+//	public static long getSmallestPrimeFactor(long number){
+//		int divs = 2;
+//		//if number is prime, smallest prime factor will be the number itself
+//		if (isPrime(divs)){return divs;}
+//		//if number is not a prime
+//		//TODO We need to find only smallest prime factor
+//		//instead of iterating natural numbers, iterate prime numbers
+//		while (divs <= number) {
+//			if ((number % divs) == 0 && isPrime(divs)) {
+//				//System.err.println("Smallest prime factor of "+number + " is " +divs);
+//				break;
+//			}
+//			divs++;
+//		}
+//		return divs;
+//	}
+
+	/**
+	 * @param number
+	 */
+	public static long getSmallestPrimeFactor(int number){
+		int i = 0;
+		int limit = primeCollection.size()-1;
+		while(i<limit && (number % primeCollection.get(i)!=0)){
+			i++;
 		}
-		return divs;
+		int smallestPrimeFactor = primeCollection.get(i);
+		if(stats.get(smallestPrimeFactor) == null)stats.put(smallestPrimeFactor, 1);
+		else stats.put(smallestPrimeFactor, stats.get(smallestPrimeFactor)+1);
+		
+		return smallestPrimeFactor;
+		//return primeCollection.get(i);
 	}
 
 	/**
@@ -68,39 +102,42 @@ public class SmallestPrimeFactor {
 		   }
 		}System.err.println(divs +" is prime ? " + true);
 		return true;
-//		if((divs % 2) !=0 && (divs % 3!=0) && (divs % 5) !=0 && (divs % 7!=0))
-//		return true;
-//		else return false;
 	}
+
+
+
 	/**
-	 * This method builds array of prime numbers below the given range
-	 * 
-	 * @param divs
-	 * @return
-	 * 
-	 * element at index 1 will be always prime
-	 * 
-	 * TODO optimize prime check
+	 * This method builds array of prime numbers for given range
+	 * It uses simple array traversal hence very effective as compared to old techniqe
+	 * Uses "Sieve of Eratosthenes" algorithm to find the prime numbers
+	 *
+	 * @param number
 	 */
-	private static void buildPrimes(int number) {
+	public static void buildPrimes(int number) {
 		
-		for(int i=1;i<=number;i++)
+		for(int i=1;i<number;i++)
 		{
 			if(noprimes[i] == false){
 				// ie i+1 the number is prime
 				//mark the multiples of i+1 as no prime i.e. true
+				primeCollection.add(i+1);
 				markNoPrimes(noprimes,i+1,number);
 			}
 		}
 		
 	}
 	
-	private static void markNoPrimes(boolean noprimes[], int multiplesOf, int limit) {
-	int multiplyBy = 2,num;
-	while((num = multiplesOf*multiplyBy) <= limit){
-		noprimes[num-1]=true;
-		multiplyBy++;
-	}
+	/**
+	 * This method is used by buildPrimes(int).
+	 * It is used to mark all the multiples of a given number as noPrime.
+	 * 
+	 */
+	private static void markNoPrimes(boolean noprimes[], int multipleOf, int limit) {
+		int multiplyBy = 2, num;
+		while ((num = multipleOf * multiplyBy) <= limit) {
+			noprimes[num - 1] = true;
+			multiplyBy++;
+		}
 	}
 	
 }	
